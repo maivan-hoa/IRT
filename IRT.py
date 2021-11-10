@@ -78,11 +78,12 @@ def binary_search(a, b, eps, index_remove, get_max=False):
 
 
 # Chạy trên một bộ dữ liệu cụ thể
-def run(path_data, theta, eps, K=None, max_seq_right=None):
+def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
+    
     code_question, right_ans, a, b, c = read_data(path_data)
     
     # lưu các thông tin sau k câu hỏi
-    code_question_k = np.array(['']) # mã câu hỏi
+    code_question_k = np.array([]) # mã câu hỏi
     index_question_k = np.array([]) # chỉ số của câu hỏi đã lấy ra
     answer_k = np.array([]) # câu trả lời
     a_k = np.array([])
@@ -91,6 +92,9 @@ def run(path_data, theta, eps, K=None, max_seq_right=None):
     X_k = np.array([]).astype(int) # 1 là đúng, 0 là sai
     theta_k = np.array([]) # năng lực của thí sinh
     seq_right = 0 # lưu số lượng câu trả lời đúng liên tiếp cho đến câu hiện tại
+    seq_theta = 0 # lưu số lượng câu trả lời liên tiếp mà theta thay đổi không 
+                  # đáng kể cho đến câu hiện tại
+    
     
     if K == None:
         K = len(a)
@@ -103,7 +107,9 @@ def run(path_data, theta, eps, K=None, max_seq_right=None):
         theta_k = np.append(theta_k, theta)
         
         # Tìm độ khó của câu tiếp theo
-        i = binary_search(theta, b, eps, index_question_k, get_max=(seq_right==max_seq_right))
+        get_max = (seq_right==max_seq_right) or (seq_theta==max_seq_theta)
+        
+        i = binary_search(theta, b, eps, index_question_k, get_max=get_max)
         index_question_k = np.append(index_question_k, i)
         
         if i == -1:
@@ -135,7 +141,16 @@ def run(path_data, theta, eps, K=None, max_seq_right=None):
         c_k = np.append(c_k, c[i])
         code_question_k = np.append(code_question_k, code_question[i])
         
+        if get_max and ans==right_ans[i]:
+            print('TRẢ LỜI ĐÚNG CÂU KHÓ NHẤT')
+            break
+        
         theta = update_theta(theta, lr, a_k, b_k, c_k, X_k)
+        
+        if abs(theta - theta_k[k]) > eps_theta:
+            seq_theta = 0
+        else:
+            seq_theta += 1 # nếu theta thay đổi không đáng kể, tăng bộ đếm
         # print('==============================================================')
         
         
@@ -152,7 +167,8 @@ def run(path_data, theta, eps, K=None, max_seq_right=None):
                  Năng lực của thí sinh: {}
                  Độ phân biệt: {}
                  Độ khó: {}
-                 Độ đoán mò: {}'''.format(i, code_question_k[i+1], answer_k[i], X_k[i], theta_k[i], a_k[i], b_k[i], c_k[i]))
+                 Độ đoán mò: {}'''.format(i, code_question_k[i], answer_k[i], 
+                                     X_k[i], theta_k[i], a_k[i], b_k[i], c_k[i]))
 
         
 
@@ -163,10 +179,18 @@ if __name__ == '__main__':
     eps = 0.05
     # Số câu tối đa cần trả lời 
     K = 100
+    
     # Số câu trả lời đúng liên tiếp thì lấy ra câu khó nhất
-    max_seq_right = 5
+    max_seq_right = 15
+    
+    # Số câu trả lời liên tiếp mà theta không thay đổi nhiều thì break
+    max_seq_theta = 5
+    
+    # ngưỡng theta phải thay đổi sau một số câu hỏi liên tiếp
+    eps_theta = 1e-4
+    
     path_data = './500b_v3.csv'
-    theta = run(path_data, theta, eps, K, max_seq_right)
+    theta = run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K)
     
     
     
