@@ -108,6 +108,8 @@ def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
         
         # Tìm độ khó của câu tiếp theo
         get_max = (seq_right==max_seq_right) or (seq_theta==max_seq_theta)
+        if get_max:
+            print("====LẤY RA CÂU KHÓ NHẤT====")
         
         i = binary_search(theta, b, eps, index_question_k, get_max=get_max)
         index_question_k = np.append(index_question_k, i)
@@ -141,9 +143,13 @@ def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
         c_k = np.append(c_k, c[i])
         code_question_k = np.append(code_question_k, code_question[i])
         
-        if get_max and ans==right_ans[i]:
-            print('TRẢ LỜI ĐÚNG CÂU KHÓ NHẤT')
-            break
+        if get_max:
+            if ans==right_ans[i]:
+                print('TRẢ LỜI ĐÚNG CÂU KHÓ NHẤT')
+                break
+            else:
+                print('TRẢ LỜI SAI CÂU KHÓ NHẤT')
+                break
         
         theta = update_theta(theta, lr, a_k, b_k, c_k, X_k)
         
@@ -180,14 +186,14 @@ if __name__ == '__main__':
     # Số câu tối đa cần trả lời 
     K = 100
     
-    # Số câu trả lời đúng liên tiếp thì lấy ra câu khó nhất
+    # Số câu trả lời đúng liên tiếp thì lấy ra câu khó nhất và break
     max_seq_right = 15
     
-    # Số câu trả lời liên tiếp mà theta không thay đổi nhiều thì break
-    max_seq_theta = 5
+    # Số câu trả lời liên tiếp mà theta không thay đổi nhiều thì lấy ra câu hỏi khó nhất và break
+    max_seq_theta = 2
     
     # ngưỡng theta phải thay đổi sau một số câu hỏi liên tiếp
-    eps_theta = 1e-4
+    eps_theta = 1
     
     path_data = './500b_v3.csv'
     theta = run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K)
