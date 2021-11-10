@@ -39,14 +39,18 @@ def update_theta(theta, lr, a, b, c, X):
 
     return theta
 
-def binary_search(a, b, eps, index_remove):
+def binary_search(a, b, eps, index_remove, get_max=False):
     '''
     tìm chỉ số trong mảng b sao cho abs(a-b[i]) < eps
     tìm chỉ số i sao cho b[i] càng gần a càng tốt
     đồng thời i không nằm trong index_remove
+    lấy ra câu khó nhất nếu get_max=True
     '''
     # trả về chỉ số của phần tử trong mảng b thỏa mãn |a-b| < eps
     index = np.argsort(b)
+    if get_max:
+        return index[-1]
+    
     b = b[index]
     
     L = 0
@@ -74,7 +78,7 @@ def binary_search(a, b, eps, index_remove):
 
 
 # Chạy trên một bộ dữ liệu cụ thể
-def run(path_data, theta, eps, K=None):
+def run(path_data, theta, eps, K=None, max_seq_right=None):
     code_question, right_ans, a, b, c = read_data(path_data)
     
     # lưu các thông tin sau k câu hỏi
@@ -86,7 +90,7 @@ def run(path_data, theta, eps, K=None):
     c_k = np.array([])
     X_k = np.array([]).astype(int) # 1 là đúng, 0 là sai
     theta_k = np.array([]) # năng lực của thí sinh
-    
+    seq_right = 0 # lưu số lượng câu trả lời đúng liên tiếp cho đến câu hiện tại
     
     if K == None:
         K = len(a)
@@ -99,7 +103,7 @@ def run(path_data, theta, eps, K=None):
         theta_k = np.append(theta_k, theta)
         
         # Tìm độ khó của câu tiếp theo
-        i = binary_search(theta, b, eps, index_question_k)
+        i = binary_search(theta, b, eps, index_question_k, get_max=(seq_right==max_seq_right))
         index_question_k = np.append(index_question_k, i)
         
         if i == -1:
@@ -121,8 +125,10 @@ def run(path_data, theta, eps, K=None):
         
         if ans != right_ans[i]:
             X_k = np.append(X_k, 0)
+            seq_right = 0
         else:
             X_k = np.append(X_k, 1)
+            seq_right += 1
             
         a_k = np.append(a_k, a[i])
         b_k = np.append(b_k, b[i])
@@ -155,9 +161,12 @@ if __name__ == '__main__':
     theta = 0 #np.random.randn()
     lr = 0.01
     eps = 0.05
-    K = 10
+    # Số câu tối đa cần trả lời 
+    K = 100
+    # Số câu trả lời đúng liên tiếp thì lấy ra câu khó nhất
+    max_seq_right = 5
     path_data = './500b_v3.csv'
-    theta = run(path_data, theta, eps, K)
+    theta = run(path_data, theta, eps, K, max_seq_right)
     
     
     
