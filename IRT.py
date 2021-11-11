@@ -77,6 +77,31 @@ def binary_search(a, b, eps, index_remove, get_max=False):
     return result
 
 
+def find_next(a, b, eps, index_remove, get_max=False):
+    '''
+    tìm chỉ số trong mảng b sao cho abs(a-b[i]) < eps
+    tìm chỉ số i sao cho b[i] càng gần a càng tốt
+    đồng thời i không nằm trong index_remove
+    lấy ra câu khó nhất nếu get_max=True
+    '''
+    # trả về chỉ số của phần tử trong mảng b thỏa mãn |a-b| < eps
+    if get_max:
+        index = np.argsort(b)
+        return index[-1]
+    
+    delta = abs(b - a)
+    index = np.argsort(delta)
+    delta = delta[index]
+    
+    result = -1
+    for i in range(len(delta)):
+        if delta[i]<=eps and index[i] not in index_remove:
+            return index[i]
+        
+    return result
+
+
+
 # Chạy trên một bộ dữ liệu cụ thể
 def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
     
@@ -111,7 +136,8 @@ def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
         if get_max:
             print("====LẤY RA CÂU KHÓ NHẤT====")
         
-        i = binary_search(theta, b, eps, index_question_k, get_max=get_max)
+        # i = binary_search(theta, b, eps, index_question_k, get_max=get_max)
+        i = find_next(theta, b, eps, index_question_k, get_max=get_max)
         index_question_k = np.append(index_question_k, i)
         
         if i == -1:
@@ -174,7 +200,7 @@ def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
                  Độ phân biệt: {}
                  Độ khó: {}
                  Độ đoán mò: {}'''.format(i, code_question_k[i], answer_k[i], 
-                                     X_k[i], theta_k[i], a_k[i], b_k[i], c_k[i]))
+                                     X_k[i], round(theta_k[i], 3), a_k[i], b_k[i], c_k[i]))
 
         
 
@@ -190,7 +216,7 @@ if __name__ == '__main__':
     max_seq_right = 15
     
     # Số câu trả lời liên tiếp mà theta không thay đổi nhiều thì lấy ra câu hỏi khó nhất và break
-    max_seq_theta = 2
+    max_seq_theta = 10
     
     # ngưỡng theta phải thay đổi sau một số câu hỏi liên tiếp
     eps_theta = 1
