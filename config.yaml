@@ -1,0 +1,11 @@
+path_data: './data/500b_v3.csv'
+path_log: './result/result_log.csv'
+
+ID: 1
+lr: 0.01
+eps: 0.05
+K: 2
+max_seq_right: 15
+max_seq_wrong: 3
+max_seq_theta: 10
+eps_theta: 1

@@ -8,6 +8,9 @@ Created on Thu Oct 14 15:50:57 2021
 import pandas as pd
 import math
 import numpy as np
+import os
+import csv
+from datetime import datetime
 
 
 def read_data(path):
@@ -27,6 +30,32 @@ def read_data(path):
     return code_question, right_ans, a, b, c
 
 
+def write_data(path_log, data):
+            
+    with open(path_log, 'a', newline='') as f:
+        csvwriter = csv.writer(f) 
+        # writing the data 
+        csvwriter.writerow(data)
+            
+
+
+def print_summary(theta, k, code_question_k, answer_k, X_k, theta_k, a_k, b_k, c_k):
+    print('==============================================================')
+    print('KẾT THÚC: ')
+    print('Năng lực của thí sinh: ', theta)
+    print('Lịch sử làm bài: ')
+    
+    for i in range(k+1):
+        print('''Câu hỏi số: {}
+                 Mã câu hỏi: {}
+                 Câu trả lời của thí sinh: {}
+                 Trả lời đúng/sai: {}
+                 Năng lực của thí sinh: {}
+                 Độ phân biệt: {}
+                 Độ khó: {}
+                 Độ đoán mò: {}'''.format(i, code_question_k[i], answer_k[i], 
+                                     X_k[i], round(theta_k[i], 3), a_k[i], b_k[i], c_k[i]))
+
 # Cập nhật theta sau khi thí sinh trả lời k câu hỏi
 def update_theta(theta, lr, a, b, c, X):
     '''
@@ -39,45 +68,8 @@ def update_theta(theta, lr, a, b, c, X):
 
     return theta
 
-def binary_search(a, b, eps, index_remove, get_max=False):
-    '''
-    tìm chỉ số trong mảng b sao cho abs(a-b[i]) < eps
-    tìm chỉ số i sao cho b[i] càng gần a càng tốt
-    đồng thời i không nằm trong index_remove
-    lấy ra câu khó nhất nếu get_max=True
-    '''
-    # trả về chỉ số của phần tử trong mảng b thỏa mãn |a-b| < eps
-    index = np.argsort(b)
-    if get_max:
-        return index[-1]
-    
-    b = b[index]
-    
-    L = 0
-    R = len(b) - 1
-    result = -1
-    
-    while L <= R:
-        m = (L + R) // 2
-        
-        if (abs(a - b[m]) <= eps):
-            if (index[m] not in index_remove):
-                result = index[m]
-                eps = abs(a - b[m])
-            if b[m] > a:
-                R = m - 1
-            else:
-                L = m + 1
-            
-        elif b[m] - a >= eps:
-            R = m - 1
-        else:
-            L = m + 1
 
-    return result
-
-
-def find_next(a, b, eps, index_remove, get_max=False):
+def find_next(a, b, eps, index_remove, get_max=False, get_min=False):
     '''
     tìm chỉ số trong mảng b sao cho abs(a-b[i]) < eps
     tìm chỉ số i sao cho b[i] càng gần a càng tốt
@@ -87,7 +79,16 @@ def find_next(a, b, eps, index_remove, get_max=False):
     # trả về chỉ số của phần tử trong mảng b thỏa mãn |a-b| < eps
     if get_max:
         index = np.argsort(b)
-        return index[-1]
+        if index[-1] not in index_remove:
+            return index[-1]
+        return -1
+    
+    if get_min:
+        index = np.argsort(b)
+        for i in range(len(index)):
+            if index[i] not in index_remove:
+                return index[i]
+        return -1
     
     delta = abs(b - a)
     index = np.argsort(delta)
@@ -103,7 +104,8 @@ def find_next(a, b, eps, index_remove, get_max=False):
 
 
 # Chạy trên một bộ dữ liệu cụ thể
-def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
+def run(ID, path_data, path_log, time_checked, theta, eps, max_seq_right, 
+        max_seq_wrong, max_seq_theta, eps_theta, K=None):
     
     code_question, right_ans, a, b, c = read_data(path_data)
     
@@ -116,7 +118,9 @@ def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
     c_k = np.array([])
     X_k = np.array([]).astype(int) # 1 là đúng, 0 là sai
     theta_k = np.array([]) # năng lực của thí sinh
+    
     seq_right = 0 # lưu số lượng câu trả lời đúng liên tiếp cho đến câu hiện tại
+    seq_wrong = 0 # lưu số lượng câu trả lời sai liên tiếp cho đến câu hiện tại
     seq_theta = 0 # lưu số lượng câu trả lời liên tiếp mà theta thay đổi không 
                   # đáng kể cho đến câu hiện tại
     
@@ -135,9 +139,13 @@ def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
         get_max = (seq_right==max_seq_right) or (seq_theta==max_seq_theta)
         if get_max:
             print("====LẤY RA CÂU KHÓ NHẤT====")
+            
+        get_min = (seq_wrong==max_seq_wrong)
+        if get_min:
+            print("====LẤY RA CÂU DỄ NHẤT CHƯA TRẢ LỜI====")
         
         # i = binary_search(theta, b, eps, index_question_k, get_max=get_max)
-        i = find_next(theta, b, eps, index_question_k, get_max=get_max)
+        i = find_next(theta, b, eps, index_question_k, get_max=get_max, get_min=get_min)
         index_question_k = np.append(index_question_k, i)
         
         if i == -1:
@@ -160,9 +168,11 @@ def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
         if ans != right_ans[i]:
             X_k = np.append(X_k, 0)
             seq_right = 0
+            seq_wrong += 1
         else:
             X_k = np.append(X_k, 1)
             seq_right += 1
+            seq_wrong = 0
             
         a_k = np.append(a_k, a[i])
         b_k = np.append(b_k, b[i])
@@ -184,36 +194,48 @@ def run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K=None):
         else:
             seq_theta += 1 # nếu theta thay đổi không đáng kể, tăng bộ đếm
         # print('==============================================================')
-        
-        
-    print('==============================================================')
-    print('KẾT THÚC: ')
-    print('Năng lực của thí sinh: ', theta)
-    print('Lịch sử làm bài: ')
     
-    for i in range(k+1):
-        print('''Câu hỏi số: {}
-                 Mã câu hỏi: {}
-                 Câu trả lời của thí sinh: {}
-                 Trả lời đúng/sai: {}
-                 Năng lực của thí sinh: {}
-                 Độ phân biệt: {}
-                 Độ khó: {}
-                 Độ đoán mò: {}'''.format(i, code_question_k[i], answer_k[i], 
-                                     X_k[i], round(theta_k[i], 3), a_k[i], b_k[i], c_k[i]))
+    data = [ID, theta, time_checked+1, datetime.today().strftime('%Y-%m-%d-%H:%M:%S')]
+    write_data(path_log, data)
+    print_summary(theta, k, code_question_k, answer_k, X_k, theta_k, a_k, b_k, c_k)
+        
 
         
 
 if __name__ == '__main__':
-    # theta khởi tạo ngẫu nhiên theo phân phối chuẩn
-    theta = 0 #np.random.randn()
+    path_data = './data/500b_v3.csv'
+    path_log = './result/result_log.csv'
+    path_config = './config.yaml'
+    
+    if not os.path.exists(path_log):
+        fields = ['ID', 'Theta', 'Time_check', 'Date']
+        write_data(path_log, fields)
+    # theta khởi tạo từ làm lần thi trước của thí sinh
+    ID = 1
+    
+    data_log = pd.read_csv(path_log)
+    df_id = data_log[data_log['ID'] == ID]
+    time_checked = len(df_id)
+    
+    if time_checked == 0:
+        theta = 0 #np.random.randn()
+    else:
+        theta = df_id[df_id['Time_check'] == time_checked].Theta.values[0]
+        
+        
     lr = 0.01
+    
+    # khoảng cách tối đa giữa câu hỏi lấy ra và theta hiện tại
     eps = 0.05
+    
     # Số câu tối đa cần trả lời 
-    K = 100
+    K = 2
     
     # Số câu trả lời đúng liên tiếp thì lấy ra câu khó nhất và break
     max_seq_right = 15
+    
+    # Số câu trả lời sai liên tiếp thì lấy ra câu dễ nhất chưa trả lời
+    max_seq_wrong = 3
     
     # Số câu trả lời liên tiếp mà theta không thay đổi nhiều thì lấy ra câu hỏi khó nhất và break
     max_seq_theta = 10
@@ -221,8 +243,19 @@ if __name__ == '__main__':
     # ngưỡng theta phải thay đổi sau một số câu hỏi liên tiếp
     eps_theta = 1
     
-    path_data = './500b_v3.csv'
-    theta = run(path_data, theta, eps, max_seq_right, max_seq_theta, eps_theta, K)
+    
+    print('CÁC THAM SỐ KHỞI TẠO:')
+    print('''
+          ID thí sinh: {}
+          Theta: {}
+          learning rate: {}
+          eps: {}
+          K: {}
+          '''.format(ID, theta, lr, eps, K))
+    
+    
+    run(ID, path_data, path_log, time_checked, theta, eps, max_seq_right, 
+        max_seq_wrong, max_seq_theta, eps_theta, K)
     
     
     
