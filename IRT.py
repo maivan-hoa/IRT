@@ -11,6 +11,7 @@ import numpy as np
 import os
 import csv
 from datetime import datetime
+import yaml
 
 
 def read_data(path):
@@ -203,16 +204,26 @@ def run(ID, path_data, path_log, time_checked, theta, eps, max_seq_right,
         
 
 if __name__ == '__main__':
-    path_data = './data/500b_v3.csv'
-    path_log = './result/result_log.csv'
     path_config = './config.yaml'
+    with open(path_config, encoding="utf8") as file:
+        conf = yaml.full_load(file)
+    
+    path_data = conf['path_data']
+    path_log = conf['path_log']
+    ID = conf['ID']
+    lr = conf['lr']
+    eps = conf['eps']
+    K = conf['K']
+    max_seq_wrong = conf['max_seq_wrong']
+    max_seq_right = conf['max_seq_right']
+    max_seq_theta = conf['max_seq_theta']
+    eps_theta = conf['eps_theta']
     
     if not os.path.exists(path_log):
         fields = ['ID', 'Theta', 'Time_check', 'Date']
         write_data(path_log, fields)
+        
     # theta khởi tạo từ làm lần thi trước của thí sinh
-    ID = 1
-    
     data_log = pd.read_csv(path_log)
     df_id = data_log[data_log['ID'] == ID]
     time_checked = len(df_id)
@@ -222,27 +233,6 @@ if __name__ == '__main__':
     else:
         theta = df_id[df_id['Time_check'] == time_checked].Theta.values[0]
         
-        
-    lr = 0.01
-    
-    # khoảng cách tối đa giữa câu hỏi lấy ra và theta hiện tại
-    eps = 0.05
-    
-    # Số câu tối đa cần trả lời 
-    K = 2
-    
-    # Số câu trả lời đúng liên tiếp thì lấy ra câu khó nhất và break
-    max_seq_right = 15
-    
-    # Số câu trả lời sai liên tiếp thì lấy ra câu dễ nhất chưa trả lời
-    max_seq_wrong = 3
-    
-    # Số câu trả lời liên tiếp mà theta không thay đổi nhiều thì lấy ra câu hỏi khó nhất và break
-    max_seq_theta = 10
-    
-    # ngưỡng theta phải thay đổi sau một số câu hỏi liên tiếp
-    eps_theta = 1
-    
     
     print('CÁC THAM SỐ KHỞI TẠO:')
     print('''
