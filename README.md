@@ -2,6 +2,6 @@
 
 Các ràng buộc:
 - Trả lời đúng liên tiếp một ngưỡng câu hỏi -> lấy ra câu khó nhất và break
-- Theta không thay đổi đáng kể sau một số câu liên tiếp -> lấy ra câu khó nhất và break
-- Trả lời sai liên tiếp một ngưỡng câu hỏi -> lấy ra câu dễ nhất chưa trả lời
+- Theta không thay đổi đáng kể sau một số câu liên tiếp -> break
+- Trả lời sai liên tiếp một ngưỡng câu hỏi -> lấy ra câu dễ nhất chưa trả lời và break
 - Theta được khởi tạo từ lần thi trước của thí sinh

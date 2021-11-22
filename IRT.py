@@ -137,7 +137,7 @@ def run(ID, path_data, path_log, time_checked, theta, eps, max_seq_right,
         theta_k = np.append(theta_k, theta)
         
         # Tìm độ khó của câu tiếp theo
-        get_max = (seq_right==max_seq_right) or (seq_theta==max_seq_theta)
+        get_max = (seq_right==max_seq_right)
         if get_max:
             print("====LẤY RA CÂU KHÓ NHẤT====")
             
@@ -180,6 +180,8 @@ def run(ID, path_data, path_log, time_checked, theta, eps, max_seq_right,
         c_k = np.append(c_k, c[i])
         code_question_k = np.append(code_question_k, code_question[i])
         
+        theta = update_theta(theta, lr, a_k, b_k, c_k, X_k)
+        
         if get_max:
             if ans==right_ans[i]:
                 print('TRẢ LỜI ĐÚNG CÂU KHÓ NHẤT')
@@ -187,13 +189,24 @@ def run(ID, path_data, path_log, time_checked, theta, eps, max_seq_right,
             else:
                 print('TRẢ LỜI SAI CÂU KHÓ NHẤT')
                 break
+            
+        if get_min:
+            if ans==right_ans[i]:
+                print('TRẢ LỜI ĐÚNG CÂU DỄ NHẤT')
+                break
+            else:
+                print('TRẢ LỜI SAI CÂU DỄ NHẤT')
+                break
         
-        theta = update_theta(theta, lr, a_k, b_k, c_k, X_k)
         
         if abs(theta - theta_k[k]) > eps_theta:
             seq_theta = 0
         else:
             seq_theta += 1 # nếu theta thay đổi không đáng kể, tăng bộ đếm
+            
+        if (seq_theta==max_seq_theta):
+            print('===THETA KHÔNG THAY ĐỔI QUÁ NHIỀU===')
+            break
         # print('==============================================================')
     
     data = [ID, theta, time_checked+1, datetime.today().strftime('%Y-%m-%d-%H:%M:%S')]
