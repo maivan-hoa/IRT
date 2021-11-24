@@ -1,8 +1,8 @@
 path_data: './data/500b_v3.csv'
-path_log: './result/result_log.csv'
+path_log: './result/ID_Sinhvien.csv'
 
 # ID của thí sinh
-ID: 1
+# ID: 1
 
 # learning rate
 lr: 0.01

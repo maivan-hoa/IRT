@@ -37,7 +37,12 @@ def write_data(path_log, data):
         csvwriter = csv.writer(f) 
         # writing the data 
         csvwriter.writerow(data)
-            
+        
+        
+def update_data(path_log, index, col, new_value):
+    data_log = pd.read_csv(path_log, encoding='utf8')
+    data_log.at[index, col] = new_value
+    data_log.to_csv(path_log, index=False)
 
 
 def print_summary(theta, k, code_question_k, answer_k, X_k, theta_k, a_k, b_k, c_k):
@@ -105,7 +110,7 @@ def find_next(a, b, eps, index_remove, get_max=False, get_min=False):
 
 
 # Chạy trên một bộ dữ liệu cụ thể
-def run(ID, path_data, path_log, time_checked, theta, eps, max_seq_right, 
+def run(ID, path_data, path_log, index_log, time_checked, theta, eps, max_seq_right, 
         max_seq_wrong, max_seq_theta, eps_theta, K=None):
     
     code_question, right_ans, a, b, c = read_data(path_data)
@@ -209,8 +214,11 @@ def run(ID, path_data, path_log, time_checked, theta, eps, max_seq_right,
             break
         # print('==============================================================')
     
-    data = [ID, theta, time_checked+1, datetime.today().strftime('%Y-%m-%d-%H:%M:%S')]
-    write_data(path_log, data)
+    # data = [ID, theta, time_checked+1, datetime.today().strftime('%Y-%m-%d-%H:%M:%S')]
+    # write_data(path_log, data)
+    
+    col = 'Năng lực sau khi thi vòng ' + str(time_checked)
+    update_data(path_log, index_log, col, theta)
     print_summary(theta, k, code_question_k, answer_k, X_k, theta_k, a_k, b_k, c_k)
         
 
@@ -223,7 +231,7 @@ if __name__ == '__main__':
     
     path_data = conf['path_data']
     path_log = conf['path_log']
-    ID = conf['ID']
+    # ID = conf['ID']
     lr = conf['lr']
     eps = conf['eps']
     K = conf['K']
@@ -232,19 +240,34 @@ if __name__ == '__main__':
     max_seq_theta = conf['max_seq_theta']
     eps_theta = conf['eps_theta']
     
+    ID = int(input("Nhập mã sinh viên: "))
+    
     if not os.path.exists(path_log):
-        fields = ['ID', 'Theta', 'Time_check', 'Date']
+        fields = ['STT', 'Mã sinh viên', 'Năng lực ban đầu', 'Năng lực sau khi thi vòng 1',
+                  'Năng lực sau khi thi vòng 2', 'Năng lực sau khi thi vòng 3', 'Năng lực sau khi thi vòng 4',
+                  'Năng lực sau khi thi vòng 5']
         write_data(path_log, fields)
         
+        
     # theta khởi tạo từ làm lần thi trước của thí sinh
-    data_log = pd.read_csv(path_log)
-    df_id = data_log[data_log['ID'] == ID]
-    time_checked = len(df_id)
+    data_log = pd.read_csv(path_log, encoding='utf8')
+    df_id = data_log[data_log['Mã sinh viên'] == ID]
     
-    if time_checked == 0:
-        theta = 0 #np.random.randn()
-    else:
-        theta = df_id[df_id['Time_check'] == time_checked].Theta.values[0]
+    if len(df_id) == 0:
+        data = [len(data_log)+1, ID, 0]
+        write_data(path_log, data)  # lưu lại giá trị theta khởi tạo
+        data_log = pd.read_csv(path_log, encoding='utf8')
+        df_id = data_log[data_log['Mã sinh viên'] == ID]
+
+    
+    # Lấy giá trị theta của lần thi cuối
+    arr_theta = df_id.values[0][2:]
+    arr_theta = arr_theta[~np.isnan(arr_theta)]
+    
+    theta = arr_theta[-1]
+    # Các thông số hỗ trợ ghi ra file
+    time_checked = len(arr_theta)
+    index_log = df_id.index[0]
         
     
     print('CÁC THAM SỐ KHỞI TẠO:')
@@ -257,7 +280,7 @@ if __name__ == '__main__':
           '''.format(ID, theta, lr, eps, K))
     
     
-    run(ID, path_data, path_log, time_checked, theta, eps, max_seq_right, 
+    run(ID, path_data, path_log, index_log, time_checked, theta, eps, max_seq_right, 
         max_seq_wrong, max_seq_theta, eps_theta, K)
     
     
